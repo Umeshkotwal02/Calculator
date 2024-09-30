@@ -17,6 +17,7 @@ function App() {
   const evaluateExpression = (expression) => {
     try {
       const sanitizedInput = expression.replace(/[^-()\d/*+.]/g, "");
+
       const evaluatedResult = eval(sanitizedInput);
 
       if (evaluatedResult === Infinity || evaluatedResult === -Infinity || isNaN(evaluatedResult)) {
@@ -201,7 +202,7 @@ if (value === "history") {
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [input]);
+  }, [input, handleKeyPress]);
 
   return (
     <div className="app">
