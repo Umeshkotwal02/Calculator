@@ -1,0 +1,118 @@
+/* Basic app layout */
+.app {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: #f0f0f0;
+}
+
+
+
+/* Calculator and history container */
+.calculator-history-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  max-width: 900px; /* Adjust the max width as needed */
+}
+
+/* Calculator layout */
+.calculator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Input and result display */
+.input_display, .result_display {
+  width: 100%;
+  text-align: right;
+  background-color: #fff;
+  padding: 15px;
+  margin: 5px 0;
+  font-size: 2rem;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.result_display {
+  font-size: 1.5rem;
+  color: gray;
+}
+
+/* Keypad container */
+.keypad_container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 20px 0;
+}
+
+/* Styling buttons */
+button {
+  flex: 1;
+  padding: 20px;
+  margin: 5px;
+  font-size: 1.5rem;
+  background-color: #e0e0e0;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s;
+}
+
+button.btn-color {
+  background-color: #ff9f1c;
+  color: white;
+}
+
+button:hover {
+  background-color: #d9d9d9;
+}
+
+button.btn-color:hover {
+  background-color: #ff851b;
+}
+
+/* Responsive layout for keypad */
+@media (max-width: 768px) {
+  .calculator-history-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .history {
+    width: 100%;
+    max-width: 400px;
+    margin-top: 20px;
+  }
+}
+
+/* History section styling */
+.history {
+  width: 100%;
+  max-width: 300px;
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  margin-left: 20px;
+}
+
+.history strong {
+  font-size: 1.2rem;
+}
+
+.history p {
+  font-size: 1rem;
+  margin: 5px 0;
+  padding: 5px;
+  background-color: #e9ecef;
+  border-radius: 5px;
+}
