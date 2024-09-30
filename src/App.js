@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Keypad from "./Keypad";
 import "./App.css";
 
@@ -12,13 +12,17 @@ function App() {
   const [secondResults, setSecondResults] = useState([]);
   const [isEdited, setIsEdited] = useState(false);
   const [history, setHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false)
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Function to safely evaluate expressions
+  const safeEval = (expr) => {
+    return Function('"use strict";return (' + expr + ')')();
+  };
 
   const evaluateExpression = (expression) => {
     try {
       const sanitizedInput = expression.replace(/[^-()\d/*+.]/g, "");
-
-      const evaluatedResult = eval(sanitizedInput);
+      const evaluatedResult = safeEval(sanitizedInput);
 
       if (evaluatedResult === Infinity || evaluatedResult === -Infinity || isNaN(evaluatedResult)) {
         setResult("Error 1");
@@ -44,12 +48,12 @@ function App() {
       setIsEdited(false);
       return;
     }
-if (value === "history") {
+    if (value === "history") {
       setShowHistory(!showHistory);
       return;
     }
-    
-     if (["+", "-", "*", "/"].includes(value)) {
+
+    if (["+", "-", "*", "/"].includes(value)) {
       if (evaluated && !isEdited) {
         setInput(result + value);
         setLastOperator(value);
@@ -86,7 +90,7 @@ if (value === "history") {
           if (firstResults.length === 0) {
             setFirstResults([evalResult]);
           } else {
-            const newResult = eval(`${firstResults[firstResults.length - 1]} ${lastOperator} ${lastInput}`);
+            const newResult = safeEval(`${firstResults[firstResults.length - 1]} ${lastOperator} ${lastInput}`);
             setSecondResults([...secondResults, newResult]);
             setInput(newResult.toString());
             setResult(newResult.toString());
@@ -108,7 +112,7 @@ if (value === "history") {
             if (firstResults.length === 0) {
               setFirstResults([evalResult]);
             } else if (!isEdited) {
-              const newResult = eval(`${firstResults[firstResults.length - 1]} ${lastOperator} ${lastInput}`);
+              const newResult = safeEval(`${firstResults[firstResults.length - 1]} ${lastOperator} ${lastInput}`);
               setSecondResults([...secondResults, newResult]);
               setInput(newResult.toString());
               setResult(newResult.toString());
@@ -182,7 +186,8 @@ if (value === "history") {
     }
   };
 
-  const handleKeyPress = (event) => {
+  // Wrap handleKeyPress with useCallback to prevent unnecessary re-renders
+  const handleKeyPress = useCallback((event) => {
     const { key } = event;
     if ((key >= "0" && key <= "9") || key === ".") {
       handleClick(key);
@@ -195,14 +200,14 @@ if (value === "history") {
     } else if (["+", "-", "*", "/"].includes(key)) {
       handleClick(key);
     }
-  };
+  }, [input]); // Added input as a dependency to capture its current state
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyPress);
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [input, handleKeyPress]);
+  }, [handleKeyPress]); // Removed input from dependencies to prevent issues with stale closures
 
   return (
     <div className="app">
@@ -229,5 +234,5 @@ if (value === "history") {
       </div>
     </div>
   );
-}  
+}
 export default App;
