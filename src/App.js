@@ -16,7 +16,12 @@ function App() {
   const safeEval = (expr) => Function('"use strict";return (' + expr + ')')();
   const evaluateExpression = (expression) => {
     try {
-      const sanitizedInput = expression.replace(/[^-()\d/*+.%]/g, "");
+      if (/\/0(?!\d)/.test(expression)) {
+        setResult("cannot divide by zero");
+        return null;
+      }
+
+      const sanitizedInput = expression.replace(/[^-()\d/x+.%]/g, "");
       const evaluatedResult = safeEval(sanitizedInput);
       if (evaluatedResult === Infinity || evaluatedResult === -Infinity || isNaN(evaluatedResult)) {
         setResult("Error 1");
@@ -64,7 +69,22 @@ function App() {
       return;
     }
 
-    if (value === "%") {
+   
+       if (value === "%") {
+      const operators = ["+", "-", "*", "/"];
+      const lastChar = input.slice(-1);
+  
+      // If there's no operator, treat input as percentage (divide by 100)
+      if (!operators.some((op) => input.includes(op))) {
+        const percentageValue = parseFloat(input) / 100;
+        setInput(percentageValue.toString());
+        setResult(percentageValue.toString());
+        setEvaluated(true);
+        return;
+      }
+
+
+
       if (lastOperator && lastInput !== null) {
         const previousValue = parseFloat(input);
         const currentValue = parseFloat(lastInput);
@@ -180,20 +200,17 @@ function App() {
       if (currentSegment.includes(".")) {
         return;
       }
-
       const lastChar = input.slice(-1);
       if (["+", "-", "*", "/", "%"].includes(lastChar)) {
         setInput(input + "0.");
       } else {
         setInput(input + value);
       }
-
       setIsEdited(true);
       return;
     }
-
     if (evaluated && !isEdited) {
-      setInput(input);
+      setInput(input + value);
       setResult("");
       setEvaluated(false);
       setFirstResults([]);
@@ -203,6 +220,13 @@ function App() {
       setInput(input === "0" && value !== "." ? value : input + value);
       setIsEdited(true);
     }
+
+      // Prevent multiple leading zeros, convert '03' to '3'
+  if (input === "0" && value !== ".") {
+    setInput(value); // Replace leading '0' with new value
+    setIsEdited(true);
+    return;
+  }
 
     if (input.length > 1) {
       const evalResult = evaluateExpression(input + value);
@@ -219,7 +243,7 @@ function App() {
   };
 
   const handleHistoryClear = () => {
-    setHistory([]); // Clears all history
+    setHistory([]);
   };
 
   const handleKeyPress = useCallback((event) => {
@@ -236,7 +260,6 @@ function App() {
       handleClick(key);
     }
   }, [input]);
-
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyPress);

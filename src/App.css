@@ -27,7 +27,6 @@
   max-width: 400px;
 }
 
-/* Input and result display */
 .input_display, .result_display {
   width: 100%;
   text-align: right;
