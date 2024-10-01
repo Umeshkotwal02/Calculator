@@ -8,8 +8,6 @@
   background-color: #f0f0f0;
 }
 
-
-
 /* Calculator and history container */
 .calculator-history-container {
   display: flex;
@@ -106,6 +104,9 @@ button.btn-color:hover {
 }
 
 .history strong {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
   font-size: 1.2rem;
 }
 
@@ -115,4 +116,14 @@ button.btn-color:hover {
   padding: 5px;
   background-color: #e9ecef;
   border-radius: 5px;
+}
+.history strong button{
+  padding: 2px;
+  margin: 2px;
+  font-size: 1rem;
+  background-color: #faf7f7;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s;
 }

@@ -3,11 +3,11 @@ import { Container, Row } from "react-bootstrap";
 import "./App.css";
 
 const buttonValues = [
-  ["7", "8", "9", "/"],
-  ["4", "5", "6", "*"],
-  ["1", "2", "3", "-"],
-  ["0", ".", "=", "+"],
-  ["clear","history"],
+  ["7", "8", "9", "<"],
+  ["4", "5", "6", "/"],
+  ["1", "2", "3", "*"],
+  ["+/-", "0", ".", "-"],
+  ["clear","=","%","+"],
 ];
 
 const Keypad = ({ handleClick }) => {

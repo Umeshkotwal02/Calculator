@@ -12,7 +12,6 @@ function App() {
   const [secondResults, setSecondResults] = useState([]);
   const [isEdited, setIsEdited] = useState(false);
   const [history, setHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
 
   // Function to safely evaluate expressions
   const safeEval = (expr) => {
@@ -21,7 +20,7 @@ function App() {
 
   const evaluateExpression = (expression) => {
     try {
-      const sanitizedInput = expression.replace(/[^-()\d/*+.]/g, "");
+      const sanitizedInput = expression.replace(/[^-()\d/*+.%]/g, "");
       const evaluatedResult = safeEval(sanitizedInput);
 
       if (evaluatedResult === Infinity || evaluatedResult === -Infinity || isNaN(evaluatedResult)) {
@@ -48,10 +47,52 @@ function App() {
       setIsEdited(false);
       return;
     }
-    if (value === "history") {
-      setShowHistory(!showHistory);
+    if (value === "<") {
+      setInput((prevInput) => (prevInput.length === 1 ? "0" : prevInput.slice(0, -1)));
+    return;
+    }
+
+    if (value === "+/-") {
+      setInput((prevInput) => {
+        if (prevInput === "0") return prevInput;
+        return prevInput.startsWith("-") ? prevInput.slice(1) : `-${prevInput}`;
+      });
       return;
     }
+
+    if (value === "%") {
+      // Handle percentage calculation
+      if (lastOperator && lastInput !== null) {
+        const previousValue = parseFloat(input);
+        const currentValue = parseFloat(lastInput);
+        let newValue;
+
+        console.log(previousValue,currentValue);
+        
+  
+        // Apply percentage logic based on the last operator
+        if (lastOperator === "+") {
+          newValue = previousValue + (previousValue * (currentValue / 100)); // Adding percentage
+         console.log(newValue,previousValue,"+",previousValue ,"*",currentValue ,"/ 100");
+          
+        } else if (lastOperator === "-") {
+          newValue = previousValue - (previousValue * (currentValue / 100)); // Subtracting percentage
+        } else if (lastOperator === "*") {
+          newValue = previousValue * (currentValue / 100); // Percentage of previous value
+        } else if (lastOperator === "/") {
+          newValue = previousValue / (currentValue / 100); // Dividing by the percentage
+        }
+    
+        setInput(newValue.toString());
+        setResult(newValue.toString());
+        setLastInput(newValue.toString()); // Update lastInput to the new value
+        setEvaluated(true);
+        console.log("New Value:", newValue);
+    
+        return;
+      }
+    }
+    
 
     if (["+", "-", "*", "/"].includes(value)) {
       if (evaluated && !isEdited) {
@@ -130,11 +171,11 @@ function App() {
       return;
     }
 
-    if (value === "0" && (input === "0" || input.endsWith("+") || input.endsWith("-") || input.endsWith("*") || input.endsWith("/"))) {
+    if (value === "0" && (input === "0" || input.endsWith("+") || input.endsWith("-") || input.endsWith("*") ||input.endsWith("%")|| input.endsWith("/"))) {
       return;
     }
     if (value === ".") {
-      const segments = input.split(/[\+\-\*\/]/);
+      const segments = input.split(/[\+\-\*\/\%]/);
       const currentSegment = segments[segments.length - 1];
 
       if (currentSegment.includes(".")) {
@@ -142,7 +183,7 @@ function App() {
       }
 
       const lastChar = input.slice(-1);
-      if (["+", "-", "*", "/"].includes(lastChar)) {
+      if (["+", "-", "*", "/","%"].includes(lastChar)) {
         setInput(input + "0.");
       } else {
         setInput(input + value);
@@ -178,15 +219,10 @@ function App() {
     setHistory(newHistory);
   };
 
-  const handleHistoryClick = (index) => {
-    if (index >= 0 && index < history.length) {
-      const { expression, result } = history[index];
-      setInput(expression);
-      setResult(result);
-    }
-  };
+  const handleHistoryClear = () => {
+      setHistory([]); // Clears all history
+    };
 
-  // Wrap handleKeyPress with useCallback to prevent unnecessary re-renders
   const handleKeyPress = useCallback((event) => {
     const { key } = event;
     if ((key >= "0" && key <= "9") || key === ".") {
@@ -197,17 +233,18 @@ function App() {
       setInput(input.length === 1 ? "0" : input.slice(0, -1));
     } else if (key === "Escape") {
       handleClick("clear");
-    } else if (["+", "-", "*", "/"].includes(key)) {
+    } else if (["+", "-", "*", "/","%"].includes(key)) {
       handleClick(key);
     }
-  }, [input]); // Added input as a dependency to capture its current state
+  }, [input]);
+
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyPress);
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [handleKeyPress]); // Removed input from dependencies to prevent issues with stale closures
+  }, [handleKeyPress]);
 
   return (
     <div className="app">
@@ -217,20 +254,21 @@ function App() {
           <div className="result_display">{result}</div>
           <Keypad handleClick={handleClick} />
         </div>
-        {showHistory && (
-          <div className="history">
-            <strong>History:</strong>
-            {history.length === 0 ? (
-              <p>No history available.</p>
-            ) : (
-              history.map((entry, index) => (
-                <p key={index}>
-                  {`${entry.expression} = ${entry.result}`}
-                </p>
-              ))
-            )}
-          </div>
-        )}
+
+        <div className="history">
+          <strong>History :        
+          <button onClick={() => handleHistoryClear()}>clear</button>
+          </strong>
+          {history.length === 0 ? (
+            <p>No history available.</p>
+          ) : (
+            history.map((entry, index) => (
+              <p key={index}>
+                {`${entry.expression} = ${entry.result}`}
+              </p>
+            ))
+          )}
+        </div>  
       </div>
     </div>
   );
