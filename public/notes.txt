@@ -1,0 +1,173 @@
+import React, { useState, useEffect, useCallback } from "react";
+import Keypad from "./Keypad";
+import "./App.css";
+
+function App() {
+  const [input, setInput] = useState("0");
+  const [result, setResult] = useState("");
+  const [lastInput, setLastInput] = useState(null);
+  const [lastOperator, setLastOperator] = useState(null);
+  const [evaluated, setEvaluated] = useState(false);
+  const [firstResults, setFirstResults] = useState([]);
+  const [secondResults, setSecondResults] = useState([]);
+  const [isEdited, setIsEdited] = useState(false);
+  const [history, setHistory] = useState([]);
+
+  const safeEval = (expr) => Function('"use strict";return (' + expr + ')')();
+  
+  const evaluateExpression = (expression) => {
+    try {
+      const sanitizedInput = expression.replace(/[^-()\d/*+.%]/g, "");
+      const evaluatedResult = safeEval(sanitizedInput);
+      if (evaluatedResult === Infinity || evaluatedResult === -Infinity || isNaN(evaluatedResult)) {
+        return setResult("Error 1");
+      }
+      setResult(evaluatedResult.toString());
+      return evaluatedResult;
+    } catch {
+      return setResult("Error 2");
+    }
+  };
+
+  const resetCalculator = () => {
+    setInput("0");
+    setResult("");
+    setLastInput(null);
+    setLastOperator(null);
+    setEvaluated(false);
+    setFirstResults([]);
+    setSecondResults([]);
+    setIsEdited(false);
+  };
+
+  const handleClick = (value) => {
+    if (value === "clear") return resetCalculator();
+    if (value === "	⌫") return setInput((prevInput) => (prevInput.length === 1 ? "0" : prevInput.slice(0, -1)));
+    
+    if (value === "+/-") {
+      setInput((prevInput) => {
+        const operators = ["+", "-", "*", "/"];
+        const lastOperatorIndex = Math.max(...operators.map(op => prevInput.lastIndexOf(op)), -1);
+        const newInput = lastOperatorIndex === -1
+          ? (prevInput.startsWith("-") ? prevInput.slice(1) : `-${prevInput}`)
+          : `${prevInput.slice(0, lastOperatorIndex + 1)}${prevInput.slice(lastOperatorIndex + 1).startsWith("-") ? prevInput.slice(lastOperatorIndex + 1).slice(1) : `(-${prevInput.slice(lastOperatorIndex + 1)})`}`;
+        
+        setResult(evaluateExpression(newInput));
+        return newInput;
+      });
+      return;
+    }
+
+    if (value === "%") {
+      if (lastOperator && lastInput !== null) {
+        const previousValue = parseFloat(input);
+        const currentValue = parseFloat(lastInput);
+        const operations = {
+          "+": (prev) => prev + (prev * (currentValue / 100)),
+          "-": (prev) => prev - (prev * (currentValue / 100)),
+          "*": (prev) => prev * (currentValue / 100),
+          "/": (prev) => prev / (currentValue / 100),
+        };
+        const newValue = operations[lastOperator](previousValue);
+        setInput(newValue.toString());
+        setResult(newValue.toString());
+        setLastInput(newValue.toString());
+        setEvaluated(true);
+        updateHistory(`${previousValue} ${lastOperator} ${currentValue}%`, newValue.toString());
+        return;
+      }
+    }
+
+    if (["+", "-", "*", "/"].includes(value)) {
+      if (evaluated && !isEdited) {
+        setInput(result + value);
+        setLastOperator(value);
+        setFirstResults([...firstResults, result]);
+      } else {
+        const lastChar = input.slice(-1);
+        setInput((["+", "-", "*", "/"].includes(lastChar) ? input.slice(0, -1) + value : evaluateExpression(input) !== null ? evaluateExpression(input) + value : input));
+      }
+      setIsEdited(false);
+      return;
+    }
+
+    if (value === "=") {
+      const evalExpression = lastOperator && lastInput !== null && !isEdited
+        ? `${input}${lastInput}`
+        : !evaluated ? input : null;
+
+      const evalResult = evalExpression ? evaluateExpression(evalExpression) : null;
+      if (evalResult !== null) {
+        setInput(evalResult.toString());
+        setEvaluated(true);
+        updateHistory(evalExpression, evalResult.toString());
+      }
+      setIsEdited(false);
+      return;
+    }
+
+    if (value === "0" && (input === "0" || input.endsWith("+") || input.endsWith("-") || input.endsWith("*") || input.endsWith("/") || input.endsWith("%"))) {
+      return;
+    }
+
+    if (value === ".") {
+      const segments = input.split(/[\+\-\*\/\%]/);
+      const currentSegment = segments[segments.length - 1];
+      if (!currentSegment.includes(".")) {
+        setInput(input + (["+", "-", "*", "/", "%"].includes(input.slice(-1)) ? "0." : value));
+      }
+      setIsEdited(true);
+      return;
+    }
+
+    setInput(input === "0" && value !== "." ? value : input + value);
+    setIsEdited(true);
+    
+    if (input.length > 1) {
+      const evalResult = evaluateExpression(input + value);
+      if (evalResult !== null) {
+        setResult(evalResult.toString());
+      }
+    }
+  };
+
+  const updateHistory = (expression, result) => {
+    setHistory((prev) => [{ expression, result }, ...prev].slice(0, 5));
+  };
+
+  const handleHistoryClear = () => setHistory([]);
+
+  const handleKeyPress = useCallback((event) => {
+    const { key } = event;
+    if ((key >= "0" && key <= "9") || key === ".") handleClick(key);
+    else if (key === "Enter") handleClick("=");
+    else if (key === "Backspace") setInput((prev) => (prev.length === 1 ? "0" : prev.slice(0, -1)));
+    else if (key === "Escape") handleClick("clear");
+    else if (["+", "-", "*", "/", "%"].includes(key)) handleClick(key);
+  }, [input]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [handleKeyPress]);
+
+  return (
+    <div className="app">
+      <div className="calculator-history-container">
+        <div className="calculator">
+          <div className="input_display">{input}</div>
+          <div className="result_display">{result}</div>
+          <Keypad handleClick={handleClick} />
+        </div>
+        <div className="history">
+          <strong>History :<button onClick={handleHistoryClear}>clear</button></strong>
+          {history.length === 0 ? <p>No history available.</p> : history.map((entry, index) => <p key={index}>{`${entry.expression} = ${entry.result}`}</p>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;
