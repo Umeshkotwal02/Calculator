@@ -16,12 +16,7 @@ function App() {
   const safeEval = (expr) => Function('"use strict";return (' + expr + ')')();
   const evaluateExpression = (expression) => {
     try {
-      if (/\/0(?!\d)/.test(expression)) {
-        setResult("cannot divide by zero");
-        return null;
-      }
-
-      const sanitizedInput = expression.replace(/[^-()\d/x+.%]/g, "");
+      const sanitizedInput = expression.replace(/[^-()\d*\/+.%]/g, "");
       const evaluatedResult = safeEval(sanitizedInput);
       if (evaluatedResult === Infinity || evaluatedResult === -Infinity || isNaN(evaluatedResult)) {
         setResult("Error 1");
@@ -32,13 +27,15 @@ function App() {
     } catch {
       setResult("Error 2");
     }
-    return null;  
+    return null;
   };
 
   const handleClick = (value) => {
     if (value === "clear") return setInput("0"), setResult(""), setLastInput(null), setLastOperator(null), setEvaluated(false), setFirstResults([]), setSecondResults([]), setIsEdited(false);
     if (value === "	⌫") return setInput((prevInput) => (prevInput.length === 1 ? "0" : prevInput.slice(0, -1)));
-    if (value === "+/-") {setInput((prevInput) => {if (prevInput === "0") return prevInput;const operators = ["+", "-", "*", "/"]; let lastOperatorIndex = -1;
+    if (value === "+/-") {
+      setInput((prevInput) => {
+        if (prevInput === "0") return prevInput; const operators = ["+", "-", "*", "/"]; let lastOperatorIndex = -1;
 
         operators.forEach((op) => {
           const index = prevInput.lastIndexOf(op);
@@ -69,12 +66,12 @@ function App() {
       return;
     }
 
-   
-       if (value === "%") {
+
+    if (value === "%") {
       const operators = ["+", "-", "*", "/"];
       const lastChar = input.slice(-1);
-  
-      // If there's no operator, treat input as percentage (divide by 100)
+
+      // no oprtr, int % /100
       if (!operators.some((op) => input.includes(op))) {
         const percentageValue = parseFloat(input) / 100;
         setInput(percentageValue.toString());
@@ -82,9 +79,6 @@ function App() {
         setEvaluated(true);
         return;
       }
-
-
-
       if (lastOperator && lastInput !== null) {
         const previousValue = parseFloat(input);
         const currentValue = parseFloat(lastInput);
@@ -109,7 +103,6 @@ function App() {
         const expression = `${previousValue} ${lastOperator} ${secondValue}%`;
         updateHistory(expression, newValue.toString());
         console.log("New Value:", newValue);
-
         return;
       }
     }
@@ -185,14 +178,12 @@ function App() {
           }
         }
       }
-
       setIsEdited(false);
       return;
     }
-
-    if (value === "0" && (input === "0" || ["+", "-", "*", "/", "%"].includes(input.slice(-1)))) 
+    if (value === "0" && (input === "0" || ["+", "-", "*", "/", "%"].includes(input.slice(-1))))
       return;
-    
+
     if (value === ".") {
       const segments = input.split(/[\+\-\*\/\%]/);
       const currentSegment = segments[segments.length - 1];
@@ -221,13 +212,11 @@ function App() {
       setIsEdited(true);
     }
 
-      // Prevent multiple leading zeros, convert '03' to '3'
-  if (input === "0" && value !== ".") {
-    setInput(value); // Replace leading '0' with new value
-    setIsEdited(true);
-    return;
-  }
-
+    if (input === "0" && value !== ".") {
+      setInput(value);
+      setIsEdited(true);
+      return;
+    }
     if (input.length > 1) {
       const evalResult = evaluateExpression(input + value);
       if (evalResult !== null) {
